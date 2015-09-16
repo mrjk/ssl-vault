@@ -1,0 +1,148 @@
+#/bin/bash
+
+
+TEMP_FILE=/tmp/vault-$RANDOM
+touch $TEMP_FILE
+chmod go-rwx $TEMP_FILE
+
+ERROR_MSG="Wrong password ..."
+
+# Internal functions
+
+func_help() {
+	#echo "Usage: vault [create|decrypt|edit|encrypt|rekey|view] [--help] [options] file_name"
+	echo "Usage: vault [create|decrypt|edit|encrypt|rekey|view] file_name"
+}
+
+
+func_create() {
+	echo "Not implemented yet"
+	exit 1
+
+}
+
+func_decrypt() {
+	CLEAR=$FILE
+	CRYPTED=$FILE
+	openssl aes-256-cbc -salt -a -d -in $CRYPTED -out $TEMP_FILE -k $PASS
+
+	# Check operation
+	if [ $? -ne 0 ]
+	then 
+		echo "$ERROR_MSG"
+		exit 1 
+	fi
+
+	# Clean temporary file
+	cat $TEMP_FILE > $CLEAR
+	rm $TEMP_FILE 
+}
+
+
+func_edit() {
+
+	# Read the encrypted file
+	CRYPTED=$FILE
+	openssl aes-256-cbc -salt -a -d -in $CRYPTED -out $TEMP_FILE -k $PASS
+
+	# Check operation and edit
+	if [ $? -ne 0 ]
+	then 
+		echo "$ERROR_MSG"
+		exit 1 
+	else
+		vim $TEMP_FILE
+	fi
+
+	# Encrypt
+	openssl aes-256-cbc -salt -a -e -in $TEMP_FILE -out $CRYPTED -k $PASS
+
+
+	# Clean temporary file
+	rm $TEMP_FILE
+
+}
+
+func_encrypt() {
+	CLEAR=$FILE
+	CRYPTED=$FILE
+	openssl aes-256-cbc -salt -a -e -in $CLEAR -out $TEMP_FILE -k $PASS
+
+	# Check operation
+	if [ $? -ne 0 ]
+	then 
+		echo "Something wrong happened :("
+		exit 1 
+	fi
+
+	# Clean temporary file
+	cat $TEMP_FILE > $CLEAR
+	rm $TEMP_FILE
+}
+
+func_rekey() {
+	echo "Not implemented yet"
+	exit 1
+}
+
+func_view() {
+	CLEAR=$FILE
+	CRYPTED=$FILE
+	openssl aes-256-cbc -salt -a -d -in $CRYPTED -out $TEMP_FILE -k $PASS
+
+	# Check operation
+	if [ $? -ne 0 ]
+	then 
+		echo "$ERROR_MSG"
+		exit 1 
+	else
+		cat $TEMP_FILE
+	fi
+
+	# Clean temporary file
+	rm $TEMP_FILE
+}
+
+func_askpass() {
+	read -s -p "Enter Password: " PASS
+	echo " "
+}
+
+# Argument management
+
+ACTION=$1
+FILE=$2
+
+case $ACTION in
+    create)
+	func_askpass
+        func_create
+        ;;
+    decrypt)
+	func_askpass
+        func_decrypt
+        ;;
+    edit)
+	func_askpass
+        func_edit
+        ;;
+    encrypt)
+	func_askpass
+        func_encrypt
+        ;;
+    rekey)
+	func_askpass
+        func_rekey
+        ;;
+    view)
+	func_askpass
+        func_view
+        ;;
+    help)
+        func_help
+        ;;
+    *)
+        func_help
+        exit 1
+        ;;
+esac
